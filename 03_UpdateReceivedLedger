@@ -1,0 +1,139 @@
+function updateReceivedLedger() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ui = SpreadsheetApp.getUi();
+  const activeSheet = ss.getActiveSheet();
+
+  const sourceName = 'RECEIVED ENTRY';
+  const ledgerName = 'RECEIVED LEDGER';
+  const inOutName = 'IN-OUT ENTRY';
+
+  if (!activeSheet || activeSheet.getName() !== sourceName) {
+    ui.alert('Please open the RECEIVED ENTRY tab, then click "Update Received Ledger".');
+    return;
+  }
+
+  const sourceSheet = ss.getSheetByName(sourceName);
+  const ledgerSheet = ss.getSheetByName(ledgerName);
+  const inOutSheet = ss.getSheetByName(inOutName);
+
+  if (!sourceSheet || !ledgerSheet || !inOutSheet) {
+    ui.alert('Required sheet missing. Check RECEIVED ENTRY / RECEIVED LEDGER / IN-OUT ENTRY.');
+    return;
+  }
+
+  const sourceData = sourceSheet.getDataRange().getValues();
+  const sourceHeaders = sourceData[0].map(h => String(h).trim());
+
+  const ledgerHeaders = ledgerSheet.getRange(1,1,1,ledgerSheet.getLastColumn()).getValues()[0].map(h => String(h).trim());
+  const inOutHeaders = inOutSheet.getRange(1,1,1,inOutSheet.getLastColumn()).getValues()[0].map(h => String(h).trim());
+
+  const sourceMap = createHeaderMap_(sourceHeaders);
+  const ledgerMap = createHeaderMap_(ledgerHeaders);
+  const inOutMap = createHeaderMap_(inOutHeaders);
+
+  const required = [
+    'ITEMCODE','MATERIAL NAME','COLOR','BIN CARD NUMBER',
+    'SUPPLIER NAME','RECEIVED QTY',
+    'RELATED TO CUSTOMER NAME','RELATED TO CUSTOMER PO NO'
+  ];
+
+  const clearHeaders = [
+    'ITEMCODE','RECEIVED QTY',
+    'RELATED TO CUSTOMER NAME','RELATED TO CUSTOMER PO NO'
+  ];
+
+  for (let h of required) {
+    if (sourceMap[h] === undefined) return ui.alert(`Missing in RECEIVED ENTRY: ${h}`);
+    if (ledgerMap[h] === undefined) return ui.alert(`Missing in RECEIVED LEDGER: ${h}`);
+  }
+
+  const rowsToLedger = [];
+  const rowsToInOut = [];
+  const rowsToClear = [];
+
+  const now = new Date(); // ✅ timestamp
+
+  for (let r = 1; r < sourceData.length; r++) {
+    const row = sourceData[r];
+
+    const valid = required.every(h => String(row[sourceMap[h]]).trim() !== '');
+    if (!valid) continue;
+
+    // ---------- RECEIVED LEDGER ----------
+    const ledgerRow = new Array(ledgerHeaders.length).fill('');
+
+    ledgerHeaders.forEach((h,i)=>{
+      if (h === 'DATE') {
+        ledgerRow[i] = now; // ✅ DATE stamp
+      } else if (sourceMap[h] !== undefined) {
+        ledgerRow[i] = row[sourceMap[h]];
+      }
+    });
+
+    rowsToLedger.push(ledgerRow);
+
+    // ---------- IN-OUT ENTRY ----------
+    const inOutRow = new Array(inOutHeaders.length).fill('');
+
+    inOutHeaders.forEach((h,i)=>{
+      if (h === 'LEDGER') {
+        inOutRow[i] = 'RECEIVED ENTRY';
+      } else if (h === 'DATE') {
+        inOutRow[i] = now; // ✅ DATE stamp
+      } else if (h === 'ISSUED QTY') {
+        inOutRow[i] = '';
+      } else if (sourceMap[h] !== undefined) {
+        inOutRow[i] = row[sourceMap[h]];
+      }
+    });
+
+    rowsToInOut.push(inOutRow);
+    rowsToClear.push(r+1);
+  }
+
+  if (rowsToLedger.length === 0) {
+    ui.alert('No valid rows found.');
+    return;
+  }
+
+  appendRows_(ledgerSheet, rowsToLedger, ledgerHeaders.length);
+  appendRows_(inOutSheet, rowsToInOut, inOutHeaders.length);
+
+  SpreadsheetApp.flush();
+
+  clearCells_(sourceSheet, sourceMap, rowsToClear, clearHeaders);
+
+  ss.toast(rowsToLedger.length + ' rows updated successfully', 'Received Entry Update', 5);
+}
+
+// ---------- helpers ----------
+
+function createHeaderMap_(headers){
+  const m = {};
+  headers.forEach((h,i)=>{ if(h) m[h]=i; });
+  return m;
+}
+
+function appendRows_(sheet, rows, width){
+  const start = getNextRow_(sheet,width);
+  sheet.getRange(start,1,rows.length,width).setValues(rows);
+}
+
+function getNextRow_(sheet,width){
+  const data = sheet.getDataRange().getValues();
+  for(let i=data.length-1;i>=0;i--){
+    if(data[i].some(c=>String(c).trim()!=='')){
+      return i+2;
+    }
+  }
+  return 2;
+}
+
+function clearCells_(sheet,map,rows,headers){
+  headers.forEach(h=>{
+    const col = map[h]+1;
+    rows.forEach(r=>{
+      sheet.getRange(r,col).clearContent();
+    });
+  });
+}
