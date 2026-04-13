@@ -180,7 +180,7 @@ function updateOpeningStock() {
   }
 
   osAppendRows_(ledgerSheet, rowsToLedger, ledgerHeaders.length);
-  osAppendRows_(inOutSheet, rowsToInOut, inOutHeaders.length);
+  osAppendRowsSkippingFormulaColumns_(inOutSheet, rowsToInOut, inOutHeaders.length);
 
   SpreadsheetApp.flush();
 
@@ -232,6 +232,42 @@ function osAppendRows_(sheet, rows, width) {
   sheet.getRange(startRow, 1, rows.length, width).setValues(rows);
 }
 
+function osAppendRowsSkippingFormulaColumns_(sheet, rows, width) {
+  const startRow = osGetNextAppendRow_(sheet, width);
+  if (!rows || rows.length === 0) return;
+
+  const formulaFlags = osGetFormulaColumnFlags_(sheet, width);
+
+  let blockStart = null;
+  for (let c = 0; c < width; c++) {
+    const isWritable = !formulaFlags[c];
+
+    if (isWritable && blockStart === null) {
+      blockStart = c;
+    }
+
+    const isBlockEnd = blockStart !== null && (!isWritable || c === width - 1);
+    if (isBlockEnd) {
+      const blockEnd = isWritable && c === width - 1 ? c : c - 1;
+      const blockWidth = blockEnd - blockStart + 1;
+
+      const values = rows.map(row => row.slice(blockStart, blockEnd + 1));
+      sheet.getRange(startRow, blockStart + 1, rows.length, blockWidth).setValues(values);
+
+      blockStart = null;
+    }
+  }
+}
+
+function osGetFormulaColumnFlags_(sheet, width) {
+  if (sheet.getMaxRows() < 2 || width < 1) {
+    return new Array(width).fill(false);
+  }
+
+  const formulas = sheet.getRange(2, 1, 1, width).getFormulas()[0];
+  return formulas.map(f => String(f).trim() !== '');
+}
+
 function osGetNextAppendRow_(sheet, width) {
   const lastRow = sheet.getLastRow();
   if (lastRow < 2) return 2;
@@ -259,15 +295,16 @@ function osMarkProcessedOpeningStock_(sheet, colIndex, rowNumbers) {
 }
 
 function osBuildContiguousRanges_(rowNumbers) {
-  const sorted = [...rowNumbers].sort((a, b) => a - b);
   const ranges = [];
+  if (!rowNumbers || rowNumbers.length === 0) return ranges;
+
+  const sorted = [...rowNumbers].sort((a, b) => a - b);
 
   let startRow = sorted[0];
   let prevRow = sorted[0];
 
   for (let i = 1; i < sorted.length; i++) {
     const currentRow = sorted[i];
-
     if (currentRow === prevRow + 1) {
       prevRow = currentRow;
       continue;
