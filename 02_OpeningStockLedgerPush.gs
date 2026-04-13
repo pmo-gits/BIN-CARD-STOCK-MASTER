@@ -49,6 +49,7 @@ function updateOpeningStock() {
   const sourceRequiredHeaders = [
     'Butler Item Code',
     'Description',
+    'Color',
     'BIN CARD NUMBER',
     'OPENING STOCK ENTRY'
   ];
@@ -62,6 +63,7 @@ function updateOpeningStock() {
   const ledgerRequiredHeaders = [
     'ITEMCODE',
     'MATERIAL NAME',
+    'COLOR',
     'BIN CARD NUMBER',
     'OPENING STOCK ENTRY'
   ];
@@ -77,6 +79,7 @@ function updateOpeningStock() {
     'LEDGER',
     'ITEMCODE',
     'MATERIAL NAME',
+    'COLOR',
     'BIN CARD NUMBER',
     'RECEIVED QTY'
   ];
@@ -92,7 +95,7 @@ function updateOpeningStock() {
 
   const rowsToLedger = [];
   const rowsToInOut = [];
-  const sourceRowNumbersToClear = [];
+  const sourceRowNumbersToMark = [];
 
   const now = new Date();
 
@@ -101,12 +104,14 @@ function updateOpeningStock() {
 
     const itemCode = String(row[sourceMap['Butler Item Code']]).trim();
     const materialName = String(row[sourceMap['Description']]).trim();
+    const color = String(row[sourceMap['Color']]).trim();
     const binCardNumber = String(row[sourceMap['BIN CARD NUMBER']]).trim();
     const openingStockQty = row[sourceMap['OPENING STOCK ENTRY']];
 
     const isQualified =
       itemCode !== '' &&
       materialName !== '' &&
+      color !== '' &&
       binCardNumber !== '' &&
       String(openingStockQty).trim() !== '';
 
@@ -124,6 +129,8 @@ function updateOpeningStock() {
         ledgerRow[idx] = itemCode;
       } else if (header === 'MATERIAL NAME') {
         ledgerRow[idx] = materialName;
+      } else if (header === 'COLOR') {
+        ledgerRow[idx] = color;
       } else if (header === 'BIN CARD NUMBER') {
         ledgerRow[idx] = binCardNumber;
       } else if (header === 'OPENING STOCK ENTRY') {
@@ -142,6 +149,8 @@ function updateOpeningStock() {
         inOutRow[idx] = itemCode;
       } else if (header === 'MATERIAL NAME') {
         inOutRow[idx] = materialName;
+      } else if (header === 'COLOR') {
+        inOutRow[idx] = color;
       } else if (header === 'BIN CARD NUMBER') {
         inOutRow[idx] = binCardNumber;
       } else if (header === 'RECEIVED QTY') {
@@ -152,7 +161,7 @@ function updateOpeningStock() {
     });
     rowsToInOut.push(inOutRow);
 
-    sourceRowNumbersToClear.push(r + 1);
+    sourceRowNumbersToMark.push(r + 1);
     currentBatchItemCodes.add(itemCode);
   }
 
@@ -166,10 +175,10 @@ function updateOpeningStock() {
 
   SpreadsheetApp.flush();
 
-  osClearAndMarkProcessedOpeningStock_(
+  osMarkProcessedOpeningStock_(
     sourceSheet,
     sourceMap['OPENING STOCK ENTRY'] + 1,
-    sourceRowNumbersToClear
+    sourceRowNumbersToMark
   );
 
   SpreadsheetApp.flush();
@@ -228,14 +237,14 @@ function osGetNextAppendRow_(sheet, width) {
   return 2;
 }
 
-function osClearAndMarkProcessedOpeningStock_(sheet, colIndex, rowNumbers) {
+function osMarkProcessedOpeningStock_(sheet, colIndex, rowNumbers) {
   if (!rowNumbers || rowNumbers.length === 0) return;
 
   const contiguousRanges = osBuildContiguousRanges_(rowNumbers);
 
   contiguousRanges.forEach(rangeObj => {
     const range = sheet.getRange(rangeObj.startRow, colIndex, rangeObj.numRows, 1);
-    range.clearContent();
+    range.setValue('OPENING STOCK UPDATED');
     range.setBackground('#ff0000');
   });
 }
