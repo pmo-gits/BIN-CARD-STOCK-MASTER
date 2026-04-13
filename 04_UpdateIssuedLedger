@@ -53,7 +53,8 @@ function updateIssuedLedger() {
     'BIN CARD NUMBER',
     'ISSUED QTY',
     'RELATED TO CUSTOMER NAME',
-    'RELATED TO CUSTOMER PO NO'
+    'RELATED TO CUSTOMER PO NO',
+    'OPENING STOCK ENTRY'
   ];
 
   const clearHeaders = [
