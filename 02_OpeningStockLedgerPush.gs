@@ -46,29 +46,11 @@ function updateOpeningStock() {
   const ledgerMap = osCreateHeaderMap_(ledgerHeaders);
   const inOutMap = osCreateHeaderMap_(inOutHeaders);
 
-  const sourceQtyHeader = 'OPENING STOCK ENTRY';
   const sourceRequiredHeaders = [
-    'ITEMCODE',
-    'MATERIAL NAME',
-    'COLOR',
+    'Butler Item Code',
+    'Description',
     'BIN CARD NUMBER',
-    'SUPPLIER NAME',
-    sourceQtyHeader
-  ];
-
-  const inOutRequiredHeaders = [
-    'LEDGER',
-    'ITEMCODE',
-    'MATERIAL NAME',
-    'COLOR',
-    'BIN CARD NUMBER',
-    'BIN CARD LOCATION',
-    'SUPPLIER NAME',
-    'RECEIVED QTY',
-    'ISSUED QTY',
-    'RELATED TO CUSTOMER NAME',
-    'RELATED TO CUSTOMER PO NO',
-    'RELATED TO STYLE NAME'
+    'OPENING STOCK ENTRY'
   ];
 
   const missingInSource = sourceRequiredHeaders.filter(h => sourceMap[h] === undefined);
@@ -77,26 +59,27 @@ function updateOpeningStock() {
     return;
   }
 
-  const missingInLedger = [
+  const ledgerRequiredHeaders = [
     'ITEMCODE',
     'MATERIAL NAME',
-    'COLOR',
     'BIN CARD NUMBER',
-    'SUPPLIER NAME'
-  ].filter(h => ledgerMap[h] === undefined);
+    'OPENING STOCK ENTRY'
+  ];
+
+  const missingInLedger = ledgerRequiredHeaders.filter(h => ledgerMap[h] === undefined);
   if (missingInLedger.length > 0) {
     ui.alert('Missing required header(s) in OPENING STOCK LEDGER:\n' + missingInLedger.join(', '));
     return;
   }
 
-  const ledgerQtyHeader = osFindFirstExistingHeader_(
-    ledgerMap,
-    ['OPENING STOCK ENTRY', 'OPENING STOCK QTY', 'RECEIVED QTY']
-  );
-  if (!ledgerQtyHeader) {
-    ui.alert('OPENING STOCK LEDGER must contain one of these headers:\nOPENING STOCK ENTRY, OPENING STOCK QTY, RECEIVED QTY');
-    return;
-  }
+  const inOutRequiredHeaders = [
+    'DATE',
+    'LEDGER',
+    'ITEMCODE',
+    'MATERIAL NAME',
+    'BIN CARD NUMBER',
+    'RECEIVED QTY'
+  ];
 
   const missingInInOut = inOutRequiredHeaders.filter(h => inOutMap[h] === undefined);
   if (missingInInOut.length > 0) {
@@ -116,16 +99,16 @@ function updateOpeningStock() {
   for (let r = 1; r < sourceData.length; r++) {
     const row = sourceData[r];
 
-    const qtyValue = row[sourceMap[sourceQtyHeader]];
-    const itemCode = String(row[sourceMap['ITEMCODE']]).trim();
+    const itemCode = String(row[sourceMap['Butler Item Code']]).trim();
+    const materialName = String(row[sourceMap['Description']]).trim();
+    const binCardNumber = String(row[sourceMap['BIN CARD NUMBER']]).trim();
+    const openingStockQty = row[sourceMap['OPENING STOCK ENTRY']];
 
     const isQualified =
       itemCode !== '' &&
-      String(row[sourceMap['MATERIAL NAME']]).trim() !== '' &&
-      String(row[sourceMap['COLOR']]).trim() !== '' &&
-      String(row[sourceMap['BIN CARD NUMBER']]).trim() !== '' &&
-      String(row[sourceMap['SUPPLIER NAME']]).trim() !== '' &&
-      String(qtyValue).trim() !== '';
+      materialName !== '' &&
+      binCardNumber !== '' &&
+      String(openingStockQty).trim() !== '';
 
     if (!isQualified) continue;
 
@@ -137,10 +120,14 @@ function updateOpeningStock() {
     ledgerHeaders.forEach((header, idx) => {
       if (header === 'DATE') {
         ledgerRow[idx] = now;
-      } else if (header === ledgerQtyHeader) {
-        ledgerRow[idx] = qtyValue;
-      } else if (sourceMap[header] !== undefined) {
-        ledgerRow[idx] = row[sourceMap[header]];
+      } else if (header === 'ITEMCODE') {
+        ledgerRow[idx] = itemCode;
+      } else if (header === 'MATERIAL NAME') {
+        ledgerRow[idx] = materialName;
+      } else if (header === 'BIN CARD NUMBER') {
+        ledgerRow[idx] = binCardNumber;
+      } else if (header === 'OPENING STOCK ENTRY') {
+        ledgerRow[idx] = openingStockQty;
       }
     });
     rowsToLedger.push(ledgerRow);
@@ -151,12 +138,16 @@ function updateOpeningStock() {
         inOutRow[idx] = now;
       } else if (header === 'LEDGER') {
         inOutRow[idx] = 'OPENING STOCK';
+      } else if (header === 'ITEMCODE') {
+        inOutRow[idx] = itemCode;
+      } else if (header === 'MATERIAL NAME') {
+        inOutRow[idx] = materialName;
+      } else if (header === 'BIN CARD NUMBER') {
+        inOutRow[idx] = binCardNumber;
       } else if (header === 'RECEIVED QTY') {
-        inOutRow[idx] = qtyValue;
+        inOutRow[idx] = openingStockQty;
       } else if (header === 'ISSUED QTY') {
         inOutRow[idx] = '';
-      } else if (sourceMap[header] !== undefined) {
-        inOutRow[idx] = row[sourceMap[header]];
       }
     });
     rowsToInOut.push(inOutRow);
@@ -177,7 +168,7 @@ function updateOpeningStock() {
 
   osClearAndMarkProcessedOpeningStock_(
     sourceSheet,
-    sourceMap[sourceQtyHeader] + 1,
+    sourceMap['OPENING STOCK ENTRY'] + 1,
     sourceRowNumbersToClear
   );
 
@@ -199,15 +190,6 @@ function osCreateHeaderMap_(headers) {
     }
   });
   return map;
-}
-
-function osFindFirstExistingHeader_(headerMap, headerOptions) {
-  for (let i = 0; i < headerOptions.length; i++) {
-    if (headerMap[headerOptions[i]] !== undefined) {
-      return headerOptions[i];
-    }
-  }
-  return '';
 }
 
 function osGetExistingItemCodes_(sheet, headerMap) {
