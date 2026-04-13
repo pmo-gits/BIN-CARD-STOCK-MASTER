@@ -24,22 +24,23 @@ function updateReceivedLedger() {
   const sourceData = sourceSheet.getDataRange().getValues();
   const sourceHeaders = sourceData[0].map(h => String(h).trim());
 
-  const ledgerHeaders = ledgerSheet.getRange(1,1,1,ledgerSheet.getLastColumn()).getValues()[0].map(h => String(h).trim());
-  const inOutHeaders = inOutSheet.getRange(1,1,1,inOutSheet.getLastColumn()).getValues()[0].map(h => String(h).trim());
+  const ledgerHeaders = ledgerSheet.getRange(1, 1, 1, ledgerSheet.getLastColumn()).getValues()[0].map(h => String(h).trim());
+  const inOutHeaders = inOutSheet.getRange(1, 1, 1, inOutSheet.getLastColumn()).getValues()[0].map(h => String(h).trim());
 
   const sourceMap = createHeaderMap_(sourceHeaders);
   const ledgerMap = createHeaderMap_(ledgerHeaders);
   const inOutMap = createHeaderMap_(inOutHeaders);
 
   const required = [
-    'ITEMCODE','MATERIAL NAME','COLOR','BIN CARD NUMBER',
-    'SUPPLIER NAME','RECEIVED QTY',
-    'RELATED TO CUSTOMER NAME','RELATED TO CUSTOMER PO NO'
+    'ITEMCODE', 'MATERIAL NAME', 'COLOR', 'BIN CARD NUMBER',
+    'SUPPLIER NAME', 'RECEIVED QTY',
+    'RELATED TO CUSTOMER NAME', 'RELATED TO CUSTOMER PO NO',
+    'OPENING STOCK ENTRY'
   ];
 
   const clearHeaders = [
-    'ITEMCODE','RECEIVED QTY',
-    'RELATED TO CUSTOMER NAME','RELATED TO CUSTOMER PO NO'
+    'ITEMCODE', 'RECEIVED QTY',
+    'RELATED TO CUSTOMER NAME', 'RELATED TO CUSTOMER PO NO'
   ];
 
   for (let h of required) {
@@ -51,7 +52,7 @@ function updateReceivedLedger() {
   const rowsToInOut = [];
   const rowsToClear = [];
 
-  const now = new Date(); // ✅ timestamp
+  const now = new Date();
 
   for (let r = 1; r < sourceData.length; r++) {
     const row = sourceData[r];
@@ -59,12 +60,11 @@ function updateReceivedLedger() {
     const valid = required.every(h => String(row[sourceMap[h]]).trim() !== '');
     if (!valid) continue;
 
-    // ---------- RECEIVED LEDGER ----------
     const ledgerRow = new Array(ledgerHeaders.length).fill('');
 
-    ledgerHeaders.forEach((h,i)=>{
+    ledgerHeaders.forEach((h, i) => {
       if (h === 'DATE') {
-        ledgerRow[i] = now; // ✅ DATE stamp
+        ledgerRow[i] = now;
       } else if (sourceMap[h] !== undefined) {
         ledgerRow[i] = row[sourceMap[h]];
       }
@@ -72,14 +72,13 @@ function updateReceivedLedger() {
 
     rowsToLedger.push(ledgerRow);
 
-    // ---------- IN-OUT ENTRY ----------
     const inOutRow = new Array(inOutHeaders.length).fill('');
 
-    inOutHeaders.forEach((h,i)=>{
+    inOutHeaders.forEach((h, i) => {
       if (h === 'LEDGER') {
         inOutRow[i] = 'RECEIVED ENTRY';
       } else if (h === 'DATE') {
-        inOutRow[i] = now; // ✅ DATE stamp
+        inOutRow[i] = now;
       } else if (h === 'ISSUED QTY') {
         inOutRow[i] = '';
       } else if (sourceMap[h] !== undefined) {
@@ -88,7 +87,7 @@ function updateReceivedLedger() {
     });
 
     rowsToInOut.push(inOutRow);
-    rowsToClear.push(r+1);
+    rowsToClear.push(r + 1);
   }
 
   if (rowsToLedger.length === 0) {
@@ -108,32 +107,34 @@ function updateReceivedLedger() {
 
 // ---------- helpers ----------
 
-function createHeaderMap_(headers){
+function createHeaderMap_(headers) {
   const m = {};
-  headers.forEach((h,i)=>{ if(h) m[h]=i; });
+  headers.forEach((h, i) => {
+    if (h) m[h] = i;
+  });
   return m;
 }
 
-function appendRows_(sheet, rows, width){
-  const start = getNextRow_(sheet,width);
-  sheet.getRange(start,1,rows.length,width).setValues(rows);
+function appendRows_(sheet, rows, width) {
+  const start = getNextRow_(sheet, width);
+  sheet.getRange(start, 1, rows.length, width).setValues(rows);
 }
 
-function getNextRow_(sheet,width){
+function getNextRow_(sheet, width) {
   const data = sheet.getDataRange().getValues();
-  for(let i=data.length-1;i>=0;i--){
-    if(data[i].some(c=>String(c).trim()!=='')){
-      return i+2;
+  for (let i = data.length - 1; i >= 0; i--) {
+    if (data[i].some(c => String(c).trim() !== '')) {
+      return i + 2;
     }
   }
   return 2;
 }
 
-function clearCells_(sheet,map,rows,headers){
-  headers.forEach(h=>{
-    const col = map[h]+1;
-    rows.forEach(r=>{
-      sheet.getRange(r,col).clearContent();
+function clearCells_(sheet, map, rows, headers) {
+  headers.forEach(h => {
+    const col = map[h] + 1;
+    rows.forEach(r => {
+      sheet.getRange(r, col).clearContent();
     });
   });
 }
