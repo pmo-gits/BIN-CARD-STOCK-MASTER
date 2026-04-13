@@ -31,11 +31,17 @@ function updateReceivedLedger() {
   const ledgerMap = createHeaderMap_(ledgerHeaders);
   const inOutMap = createHeaderMap_(inOutHeaders);
 
-  const required = [
+  const sourceRequired = [
     'ITEMCODE', 'MATERIAL NAME', 'COLOR', 'BIN CARD NUMBER',
     'SUPPLIER NAME', 'RECEIVED QTY',
     'RELATED TO CUSTOMER NAME', 'RELATED TO CUSTOMER PO NO',
     'OPENING STOCK ENTRY'
+  ];
+
+  const ledgerRequired = [
+    'ITEMCODE', 'MATERIAL NAME', 'COLOR', 'BIN CARD NUMBER',
+    'SUPPLIER NAME', 'RECEIVED QTY',
+    'RELATED TO CUSTOMER NAME', 'RELATED TO CUSTOMER PO NO'
   ];
 
   const clearHeaders = [
@@ -43,8 +49,11 @@ function updateReceivedLedger() {
     'RELATED TO CUSTOMER NAME', 'RELATED TO CUSTOMER PO NO'
   ];
 
-  for (let h of required) {
+  for (let h of sourceRequired) {
     if (sourceMap[h] === undefined) return ui.alert(`Missing in RECEIVED ENTRY: ${h}`);
+  }
+
+  for (let h of ledgerRequired) {
     if (ledgerMap[h] === undefined) return ui.alert(`Missing in RECEIVED LEDGER: ${h}`);
   }
 
@@ -57,7 +66,7 @@ function updateReceivedLedger() {
   for (let r = 1; r < sourceData.length; r++) {
     const row = sourceData[r];
 
-    const valid = required.every(h => String(row[sourceMap[h]]).trim() !== '');
+    const valid = sourceRequired.every(h => String(row[sourceMap[h]]).trim() !== '');
     if (!valid) continue;
 
     const ledgerRow = new Array(ledgerHeaders.length).fill('');
