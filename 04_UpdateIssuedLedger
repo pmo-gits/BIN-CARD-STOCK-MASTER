@@ -71,7 +71,8 @@ function updateIssuedLedger() {
     'ITEMCODE',
     'ISSUED QTY',
     'RELATED TO CUSTOMER NAME',
-    'RELATED TO CUSTOMER PO NO'
+    'RELATED TO CUSTOMER PO NO',
+    'RELATED TO STYLE NAME'
   ];
 
   const missingInSource = requiredHeaders.filter(h => sourceMap[h] === undefined);
