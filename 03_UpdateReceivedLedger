@@ -35,7 +35,7 @@ function updateReceivedLedger() {
     'ITEMCODE', 'MATERIAL NAME', 'COLOR', 'BIN CARD NUMBER',
     'SUPPLIER NAME', 'RECEIVED QTY',
     'RELATED TO CUSTOMER NAME', 'RELATED TO CUSTOMER PO NO',
-    'OPENING STOCK ENTRY'
+    'OPENING STOCK ENTRY', 'UOM'
   ];
 
   const ledgerRequired = [
@@ -74,7 +74,7 @@ function updateReceivedLedger() {
     ledgerHeaders.forEach((h, i) => {
       if (h === 'DATE') {
         ledgerRow[i] = now;
-      } else if (sourceMap[h] !== undefined) {
+      } else if (h !== 'UOM' && sourceMap[h] !== undefined) {
         ledgerRow[i] = row[sourceMap[h]];
       }
     });
@@ -90,7 +90,7 @@ function updateReceivedLedger() {
         inOutRow[i] = now;
       } else if (h === 'ISSUED QTY') {
         inOutRow[i] = '';
-      } else if (sourceMap[h] !== undefined) {
+      } else if (h !== 'UOM' && sourceMap[h] !== undefined) {
         inOutRow[i] = row[sourceMap[h]];
       }
     });
