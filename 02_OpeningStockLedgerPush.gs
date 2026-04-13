@@ -51,6 +51,7 @@ function updateOpeningStock() {
     'Description',
     'Color',
     'BIN CARD NUMBER',
+    'SUPPLIER NAME',
     'OPENING STOCK ENTRY'
   ];
 
@@ -65,6 +66,7 @@ function updateOpeningStock() {
     'MATERIAL NAME',
     'COLOR',
     'BIN CARD NUMBER',
+    'SUPPLIER NAME',
     'OPENING STOCK ENTRY'
   ];
 
@@ -81,6 +83,7 @@ function updateOpeningStock() {
     'MATERIAL NAME',
     'COLOR',
     'BIN CARD NUMBER',
+    'SUPPLIER NAME',
     'RECEIVED QTY'
   ];
 
@@ -106,6 +109,7 @@ function updateOpeningStock() {
     const materialName = String(row[sourceMap['Description']]).trim();
     const color = String(row[sourceMap['Color']]).trim();
     const binCardNumber = String(row[sourceMap['BIN CARD NUMBER']]).trim();
+    const supplierName = String(row[sourceMap['SUPPLIER NAME']]).trim();
     const openingStockQty = row[sourceMap['OPENING STOCK ENTRY']];
 
     const isQualified =
@@ -113,6 +117,7 @@ function updateOpeningStock() {
       materialName !== '' &&
       color !== '' &&
       binCardNumber !== '' &&
+      supplierName !== '' &&
       String(openingStockQty).trim() !== '';
 
     if (!isQualified) continue;
@@ -133,6 +138,8 @@ function updateOpeningStock() {
         ledgerRow[idx] = color;
       } else if (header === 'BIN CARD NUMBER') {
         ledgerRow[idx] = binCardNumber;
+      } else if (header === 'SUPPLIER NAME') {
+        ledgerRow[idx] = supplierName;
       } else if (header === 'OPENING STOCK ENTRY') {
         ledgerRow[idx] = openingStockQty;
       }
@@ -153,6 +160,8 @@ function updateOpeningStock() {
         inOutRow[idx] = color;
       } else if (header === 'BIN CARD NUMBER') {
         inOutRow[idx] = binCardNumber;
+      } else if (header === 'SUPPLIER NAME') {
+        inOutRow[idx] = supplierName;
       } else if (header === 'RECEIVED QTY') {
         inOutRow[idx] = openingStockQty;
       } else if (header === 'ISSUED QTY') {
