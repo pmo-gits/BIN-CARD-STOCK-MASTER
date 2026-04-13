@@ -57,12 +57,21 @@ function updateIssuedLedger() {
     'OPENING STOCK ENTRY'
   ];
 
+  const ledgerRequiredHeaders = [
+    'ITEMCODE',
+    'MATERIAL NAME',
+    'COLOR',
+    'BIN CARD NUMBER',
+    'ISSUED QTY',
+    'RELATED TO CUSTOMER NAME',
+    'RELATED TO CUSTOMER PO NO'
+  ];
+
   const clearHeaders = [
     'ITEMCODE',
     'ISSUED QTY',
     'RELATED TO CUSTOMER NAME',
-    'RELATED TO CUSTOMER PO NO',
-    'RELATED TO STYLE NAME'
+    'RELATED TO CUSTOMER PO NO'
   ];
 
   const missingInSource = requiredHeaders.filter(h => sourceMap[h] === undefined);
@@ -71,7 +80,7 @@ function updateIssuedLedger() {
     return;
   }
 
-  const missingInLedger = requiredHeaders.filter(h => ledgerMap[h] === undefined);
+  const missingInLedger = ledgerRequiredHeaders.filter(h => ledgerMap[h] === undefined);
   if (missingInLedger.length > 0) {
     ui.alert('Missing required header(s) in ISSUED LEDGER:\n' + missingInLedger.join(', '));
     return;
@@ -123,7 +132,7 @@ function updateIssuedLedger() {
     ledgerHeaders.forEach((header, idx) => {
       if (header === 'DATE') {
         ledgerRow[idx] = now;
-      } else if (sourceMap[header] !== undefined) {
+      } else if (header !== 'UOM' && sourceMap[header] !== undefined) {
         ledgerRow[idx] = row[sourceMap[header]];
       }
     });
@@ -137,7 +146,7 @@ function updateIssuedLedger() {
         inOutRow[idx] = now;
       } else if (header === 'RECEIVED QTY') {
         inOutRow[idx] = '';
-      } else if (sourceMap[header] !== undefined) {
+      } else if (header !== 'UOM' && sourceMap[header] !== undefined) {
         inOutRow[idx] = row[sourceMap[header]];
       }
     });
