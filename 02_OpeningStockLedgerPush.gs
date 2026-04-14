@@ -292,6 +292,15 @@ function osMarkProcessedOpeningStock_(sheet, colIndex, rowNumbers) {
     const range = sheet.getRange(rangeObj.startRow, colIndex, rangeObj.numRows, 1);
     range.setValue('OPENING STOCK UPDATED');
     range.setBackground('#ff0000');
+
+    const protection = range.protect().setDescription('Protected: OPENING STOCK UPDATED');
+    const editors = protection.getEditors();
+    if (editors.length > 0) {
+      protection.removeEditors(editors);
+    }
+    if (protection.canDomainEdit()) {
+      protection.setDomainEdit(false);
+    }
   });
 }
 
