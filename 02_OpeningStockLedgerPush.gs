@@ -118,7 +118,8 @@ function updateOpeningStock() {
       color !== '' &&
       binCardNumber !== '' &&
       supplierName !== '' &&
-      String(openingStockQty).trim() !== '';
+      String(openingStockQty).trim() !== '' &&
+      String(openingStockQty).trim() !== 'OPENING STOCK UPDATED';
 
     if (!isQualified) continue;
 
